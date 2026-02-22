@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>KevKalk SUVA PRO MAX</title>
+<style>
+body { font-family: Arial; margin:0; display:flex; }
+.left { width:40%; padding:20px; background:#f4f4f4; }
+.right { width:60%; padding:20px; }
+input, select { width:100%; margin-bottom:10px; padding:8px; }
+button { padding:12px; width:100%; background:#0077cc; color:white; border:none; font-size:16px; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th, td { border:1px solid #ccc; padding:6px; text-align:left; }
+h2 { margin-top:0; }
+.warning { color:red; font-weight:bold; }
+.ok { color:green; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div class="left">
+<h2>KevKalk SUVA PRO MAX</h2>
+
+<label>Breite Gebäude (m)</label>
+<input type="number" id="breite">
+
+<label>Länge Gebäude (m)</label>
+<input type="number" id="laenge">
+
+<label>Höhe Gebäude (m)</label>
+<input type="number" id="hoehe">
+
+<label>Rahmentyp (Tiefe)</label>
+<select id="rahmen">
+<option value="0.73">0.73 x 2.00 verzinkt</option>
+<option value="0.66">0.66 x 2.00 verzinkt</option>
+<option value="1.0">1.00 x 2.00 verzinkt</option>
+<option value="1.5">1.50 x 2.00 verzinkt</option>
+</select>
+
+<label>Lastklasse</label>
+<select id="lastklasse">
+<option value="3">LK 3 (200 kg/m²)</option>
+<option value="4">LK 4 (300 kg/m²)</option>
+<option value="5">LK 5 (450 kg/m²)</option>
+</select>
+
+<label>Abstand zur Fassade (Neubau) in cm</label>
+<input type="number" id="neu">
+
+<button onclick="berechnen()">Berechnen</button>
+
+</div>
+
+<div class="right">
+<h2>Material & SUVA Prüfung</h2>
+<div id="output"></div>
+</div>
+
+<script>
+function berechnen(){
+
+let breite = parseFloat(document.getElementById("breite").value) || 0;
+let laenge = parseFloat(document.getElementById("laenge").value) || 0;
+let hoehe = parseFloat(document.getElementById("hoehe").value) || 0;
+let rahmentiefe = parseFloat(document.getElementById("rahmen").value);
+let neu = parseFloat(document.getElementById("neu").value) || 0;
+let lastklasse = document.getElementById("lastklasse").value;
+
+let feld = 2.57;
+let felderBreite = Math.ceil(breite / feld);
+let felderLaenge = Math.ceil(laenge / feld);
+let lagen = Math.ceil(hoehe / 2.0);
+let rahmen = (felderBreite + felderLaenge) * 2 * lagen;
+
+// ----------------
+// SUVA ABSTAND
+// ----------------
+let konsoleTyp = "keine";
+let konsolenMenge = 0;
+
+if(neu > 30){
+   let diff = neu - 30;
+   if(diff <= 20) konsoleTyp = "20cm Konsole innen";
+   else if(diff <= 30) konsoleTyp = "30cm Konsole innen";
+   else konsoleTyp = "70cm Konsole innen";
+   konsolenMenge = rahmen;
+}
+
+// ----------------
+// LASTKLASSE PRÜFUNG
+// ----------------
+let warnung = "";
+
+if(lastklasse == "3" && rahmentiefe < 0.6){
+   warnung += "⚠ LK3 benötigt min 60cm Breite<br>";
+}
+if(lastklasse == "4" && rahmentiefe < 0.9){
+   warnung += "⚠ LK4 benötigt min 90cm Breite<br>";
+}
+if(lastklasse == "5" && rahmentiefe < 1.0){
+   warnung += "⚠ LK5 benötigt min 100cm Breite<br>";
+}
+
+// ----------------
+// SEITENSCHUTZ
+// ----------------
+let seitenschutz = "nicht erforderlich";
+let gelander = 0;
+let bordbrett = 0;
+
+if(hoehe > 2){
+   seitenschutz = "3-teilig erforderlich";
+   gelander = (felderBreite + felderLaenge) * 2 * lagen;
+   bordbrett = gelander;
+}
+
+// ----------------
+// ANKER SUVA
+// ----------------
+let ankerHorizontal = Math.ceil((felderBreite + felderLaenge) / 2);
+let ankerVertikal = Math.ceil(lagen / 2);
+let ankerGesamt = ankerHorizontal * ankerVertikal;
+
+// ----------------
+// ZUGANG
+// ----------------
+let zugang = "integrierte Leiter";
+
+if(lagen > 2){
+   zugang = "Treppenturm erforderlich";
+}
+if(hoehe > 8){
+   zugang = "Treppenturm zwingend (SUVA)";
+}
+
+// ----------------
+// AUSGABE
+// ----------------
+
+let output = `
+<table>
+<tr><th>Position</th><th>Menge</th></tr>
+<tr><td>Stahlrahmen</td><td>${rahmen} Stk</td></tr>
+<tr><td>${konsoleTyp}</td><td>${konsolenMenge} Stk</td></tr>
+<tr><td>Gerüstanker</td><td>${ankerGesamt} Stk</td></tr>
+<tr><td>Geländer</td><td>${gelander} Stk</td></tr>
+<tr><td>Bordbrett</td><td>${bordbrett} Stk</td></tr>
+</table>
+
+<h3>SUVA Bewertung</h3>
+<p>Seitenschutz: <b>${seitenschutz}</b></p>
+<p>Zugang: <b>${zugang}</b></p>
+<p class="warning">${warnung}</p>
+`;
+
+document.getElementById("output").innerHTML = output;
+
+}
+</script>
+
+</body>
+</html>
